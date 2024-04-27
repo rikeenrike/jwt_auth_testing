@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Response
+from fastapi import FastAPI, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from db import get_db
@@ -26,7 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class User(BaseModel):
     username: str
     password: str
@@ -42,11 +41,12 @@ async def login(
     cursor = db[0].cursor()
     cursor.execute(query, (user.username, user.password))   
     account = cursor.fetchone()  
+    
     if account:
         token_data = {
             "username": user.username,
             "account_id": account[1],
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
         }
         token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
         response.set_cookie(key="access_token", value=token, httponly=True, samesite="none", secure=True)  
@@ -55,8 +55,12 @@ async def login(
         
     else:
         raise HTTPException(status_code=400, detail="Invalid credentials")
+    
+@app.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("access_token")
+    return {"message": "Logged out"}
 
-from fastapi import Request
 
 
 def oauth2_scheme(request: Request):
@@ -69,13 +73,17 @@ async def read_users_me(token: str = Depends(oauth2_scheme)):
     try:
         payload = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("username")
+        accountid: str = payload.get("account_id")
         if username is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        return {"username": username}
+        return {
+                "username": username,
+                "accountid": accountid
+                }
     except PyJWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
