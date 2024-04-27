@@ -5,7 +5,7 @@ db_config = {
     "host": "localhost",
     "user": "root",
     "password": "",
-    "database": "uiccafesystem",
+    "database": "universitycafedb",
     "port": 3306,
 }
 
