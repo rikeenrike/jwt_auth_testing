@@ -26,7 +26,6 @@ class ConnectionManager:
         for connection in self.active_connections:
             await connection.send_text(data)
 
-
 manager = ConnectionManager()
 
 SECRET_KEY = "your_secret_key"
@@ -52,7 +51,7 @@ class User(BaseModel):
 
 @app.post("/login")
 async def login(user: User, response: Response, db=Depends(get_db)):
-    query = "SELECT AccountTypeID, AccountID, FirstName, LastName FROM accounts WHERE Email = %s AND Password = %s"
+    query = "SELECT user_id, first_name FROM user WHERE email = %s AND password = %s"
     cursor = db[0].cursor()
     cursor.execute(query, (user.username, user.password))
     account = cursor.fetchone()
@@ -60,7 +59,7 @@ async def login(user: User, response: Response, db=Depends(get_db)):
     if account:
         token_data = {
             "username": user.username,
-            "account_id": account[1],
+            "account_id": account[0],
             "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1),
         }
         token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)

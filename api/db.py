@@ -5,7 +5,7 @@ db_config = {
     "host": "localhost",
     "user": "root",
     "password": "",
-    "database": "universitycafedb",
+    "database": "reqease",
     "port": 3306,
 }
 
